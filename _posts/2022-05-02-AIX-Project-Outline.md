@@ -6,3 +6,5 @@ categories :
 ---
 
 Not prepared...
+
+![an image alt text]({{ site.baseurl }}/images/test.png "test image!")
