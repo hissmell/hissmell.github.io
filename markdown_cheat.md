@@ -48,8 +48,10 @@ var rawr = ["r", "a", "w", "r"];
 
 Use two trailing spaces  
 on the right  
-to create linebreak tags  
+to create linebreak tags
 
+<br />
+<br />
 Finally, horizontal lines
 
 ----
