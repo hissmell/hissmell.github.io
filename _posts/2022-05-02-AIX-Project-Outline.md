@@ -7,6 +7,8 @@ title : AIX - Project Outline
 <br />
 <br />
 
+----
+
 ## **Part 1. 오목 게임 구현**
 1. **어떻게 오목을 플레이하나요?**
     - 오목의 규칙에 대해서 소개합니다.
@@ -35,10 +37,10 @@ title : AIX - Project Outline
 
 6. **최적화**
     - Cython을 이용해서 파이썬 코드의 비효율성을 줄입니다.
-#
 <br />
 <br />
 
+----
 
 ## **Part 2. MCTS 구현**
 1. **MCTS의 작동원리**
@@ -63,9 +65,11 @@ title : AIX - Project Outline
 
 5. **MCTS implementation - _Backpropagation_**
     - _Backpropagation_ 단계를 구현합니다.
-#
+
 <br />
 <br />
+
+----
 
 ## **Part 3. 신경망**
 1. **Convolution layer**
@@ -85,9 +89,10 @@ title : AIX - Project Outline
 
 4. **Building neural network with PyTorch**
     - pytorch를 사용해서 강화학습에 사용할 신경망을 구현합니다.
-#
 <br />
 <br />
+
+----
 
 ## **Part 4. 강화학습**
 1. **정책향상자로서의 MCTS**
@@ -112,8 +117,9 @@ title : AIX - Project Outline
 
 5. **평가**
     - 최종적으로 학습된 신경망을 평가합니다.
-#
 <br />
 <br />
+
+----
 
 **그럼 시작해봅시다!**

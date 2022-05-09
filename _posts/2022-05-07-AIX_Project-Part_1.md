@@ -110,13 +110,95 @@ title : Part 1. 오목 게임 구현
 ## 의사코드로 게임을 나타내기
  **게임의 진행과정을 의사코드로 나타내면 다음과 같습니다**
 1. 흑 또는 백이 action을 합니다.
+<br />
+
 2. action에 해당하는 위치에 돌이 이미 존재하거나 board의 범위를 벗어나는 위치라면 에러를 반환합니다.
+<br />
+
 3. action으로 인해서 *5*가 완성된다면 결과값을 반환합니다.
+<br />
+
 4. 백 차례라면, action에 해당하는 위치에 돌을 두고 다음 State를 반환합니다.
+<br />
+
 5. action으로 인해서 *장목*이 완성된다면 흑에게 패배처리를 하고 종료합니다.
+<br />
+
 6. action으로 인해서 *44*가 완성된다면 흑에게 패배처리를 하고 종료합니다.
+<br />
+
 7. action으로 인해서 *33*이 완성된다면 흑에게 패배처리를 하고 종료합니다.
+<br />
+
 8. action에 해당하는 위치에 돌을 두고 다음 State를 반환합니다.
-9. 
-asdfasdfsdafsdafsa
+<br />
+
+9. 보드에 전부 돌이 놓여지거나 *5*가 완성되면 그에 해당하는 결과값을 반환하고 게임을 종료합니다.
+<br />
+
+## **승리를 판정하는 방법**
+
+<br />
+<br />
+
+![an image alt text]({{ site.baseurl }}/images/AIX_Project_Part01/win_01.PNG "Black win!")
+
+ * **승리조건** : 같은 색의 돌을 가로 또는 세로 또는 대각 방향으로 5개 연결하면 승리
+
+<br />
+
+같은 색의 돌이 5개 연결되어 있는지 판단하는 알고리즘은 다음과 같습니다. 간략한 설명을
+위해서 가로방향으로 5개 연결되어 있는 것을 확인합니다. 세로, 대각의 경우도 같은 방식으
+로 확인 할 수 있습니다.
+<br />
+<br />
+1. 돌을 놓는 위치로 *탐색*위치를 이동합니다.
+2. *탐색*위치에서 왼쪽으로 *탐색*위치를 이동하고 그 위치를 *탐색*합니다.
+3. *탐색* 결과, 해당 플레이어의 돌이 놓여져 있다면 find_stones 변수에 1을 더하고 왼쪽으로 한칸 이동해서 다시 *탐색*을 반복합니다.
+4. *탐색* 결과, 상대 플레이어의 돌이 놓여져 있거나, 비어있는 자리라면 처음 돌을 놓았던 위치로 *탐색*위치로 이동합니다.
+5. 왼쪽으로 *탐색*을 진행하다가 상대의 돌 또는 빈 자리를 *탐색*하여 처음자리로 돌아오면 오른쪽으로 위의 *탐색*과정을 반복합니다.
+6. 위 (1) ~ (5)과정이 끝나고 find_stones 가 5가 되었다면 해당 플레이어가 승리하였다고 판정합니다.
+<br />
+
+위의 알고리즘을 세로 방향과 대각선 방향들로도 진행하면 주어진 action이 *5*를 만들었는지를
+ 판단할 수 있습니다.
+
+ * 코드 : 위 알고리즘을 파이썬 코드로 옮깁니다.
+
+```python
+check_color = turn
+opponent_color = -turn
+max_streak = 0
+count_4 = 0
+# 가로 체크
+y = check_y + 1
+streak = 1 # 탐색 시작 위치에는 항상 플레이어의 돌이 놓여져 있기에 1에서 시작합니다.
+while 1:
+    if y >= board_size or y < 0:
+        break
+    if board_array[check_x][y] == opponent_color or board_array[check_x][y] == 0:
+        break
+    if board_array[check_x][y] == turn:
+        streak += 1
+    y += 1
+
+y = check_y - 1
+while 1:
+    if y >= board_size or y < 0:
+        break
+    if board_array[check_x][y] == opponent_color or board_array[check_x][y] == 0:
+        break
+    if board_array[check_x][y] == turn:
+        streak += 1
+    y -= 1
+
+if max_streak < streak:
+    max_streak = streak
+
+if max_streak == 5:
+    return 2 # 5가 완성되었음을 의미합니다.
+```
+
+## **금지수를 판정하는 방법**
+
 
