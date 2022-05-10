@@ -200,5 +200,170 @@ if max_streak == 5:
 ```
 
 ## **금지수를 판정하는 방법**
+ * *장목*을 판단하는 방법
 
+장목을 판단하는 방법은 *5*를 판단하는 방법과 매우 유사합니다. *5*를 탐색한 방법
+의 결과, find_stones 변수가 6이상의 값이 나오면 장목임을 확인할 수 있습니다.
 
+<br />
+<br />
+
+ * *44*를 판단하는 방법
+
+44를 판단하는 것의 핵심은 **돌이 놓여진 위치를 중심으로 몇개의 *4*가 생성
+되었는가** 를 아는 것입니다.  
+*4*를 판단하는 것은 *5*를 판단하는 방법과 비슷하지만 유의해야할 경우가 존재합니다.
+<br />
+<br />
+![an image alt text]({{ site.baseurl }}/images/AIX_Project_Part01/j44_01.PNG "Be careful!")
+<br />
+<br />
+
+위의 경우에 빨간 엑스에 흑돌을 놓는 경우는 *4*가 되는 경우로 인식하지 않습니다. *4*는
+돌을 하나 더 놓아서 돌을 5개 연결 할 수 있어야 하지만 위의 경우는 그럴 수 없습니다.
+<br />
+<br />
+따라서 *44*를 판단하는 알고리즘에는 *양쪽이 막힌 4*를 구별하기 위해 HARD_BOUND_L,
+HARD_BOUND_R이라는 변수를 도입합니다. 양쪽이 모두 막히면 HARD_BOUND_L,HARD_BOUND_R
+이 모두 True(1)을 가지게 되고, 이 경우는 *4*에서 제외합니다.
+
+<br />
+<br />
+
+ * *33*을 판단하는 방법
+
+*33*을 판단하는 방법또한 *44*의 경우가 그러했듯이 몇개의 *열린 3*이 생성되었는지 알아내는
+것이 핵심이 됩니다.  
+*열린 3*을 판단하는 것은 *4*의 경우보다 좀 더 복잡합니다.
+<br />
+<br />
+![an image alt text]({{ site.baseurl }}/images/AIX_Project_Part01/j33_01.PNG "Ordinary 33")
+<br />
+<br />
+ *열린 3*의 까다로운 점은 연속된 돌의 사이에 빈공간 하나가 들어 갈 수 있다는 점입니다.
+이 특성을 고려하기 위해서 *열린 3*을 판단하기 위해서 empty라는 변수를 도입하였습니다.  
+탐색을 시작하면서 empty는 2로 초기화 됩니다. 탐색과정에서 빈공간을 탐색하게 된다면 empty
+는 1을 차감하고 그 방향 그대로 탐색을 계속합니다. 만약 차감된 결과 empty가 0이 된다면
+탐색을 종료하고 반대방향으로 탐색을 시작합니다. 만약 이때까지 find_stones가 0이라면 empty
+는 2로 초기화 되고, 0이 아니라면 1로 초기화에서 반대방향 탐색을 진행합니다. 마찬가지로
+empty가 0이 될때까지 탐색을 계속합니다.  
+ 만약 탐색과정에서 해당 턴의 플레이어 돌 바로 옆이 막혀있다면 *열린 3*은 불가능하므로
+탐색의 효율성을 위해 탐색을 조기 종료합니다.  
+<br />
+<br />
+![an image alt text]({{ site.baseurl }}/images/AIX_Project_Part01/j33_02.PNG "Be careful! 33")
+<br />
+<br />
+위의 경우는 제시한 알고리즘의 결과로는 *열린 3*이라고 판정되지만 실제로는 *열린 3*이 아
+닌 대표적인 경우입니다. 문제가 된 부분은 위의 경우는 빨간 X 위치에 돌을 놓은후에 돌을
+하나 더 놓는다고 해도 *열린 4*가 아닌 *4*만들 수 밖에 없다느 것입니다. 이러한 경우를
+구별하기 위해서 WEAK_BOUND_L과 WEAK_BOUND_R을 추가합니다. 탐색방향으로 마지막 돌로  
+ 부터 빈공간 한칸 뒤가 막혀있다면 True(1)값을 가집니다.  
+가로방향만 코드로 옮겨보면 다음과 같습니다.
+<br />
+<br />
+
+```python
+count_3 = 0
+    # 가로 방향 33 체크
+    y = check_y + 1
+    empty = 2
+    find_stones = 1
+    HARD_BOUND = 0
+    WEAK_BOUND_L = 0
+    AROUND_STONE = 1
+    while 1:
+        if y >= board_size or y < 0:
+            if not AROUND_STONE:
+                WEAK_BOUND_L = 1
+            else:
+                HARD_BOUND = 1
+            break
+        if board_array[check_x][y] == opponent_color:
+            if not AROUND_STONE:
+                WEAK_BOUND_L = 1
+            else:
+                HARD_BOUND = 1
+            break
+        if board_array[check_x][y] == turn:
+            find_stones += 1
+            AROUND_STONE = 1
+        elif board_array[check_x][y] == 0:
+            empty -= 1
+            AROUND_STONE = 0
+        if empty <= 0:
+            break
+        y += 1
+
+    if find_stones == 1:
+        empty = 2
+    else:
+        empty = 1
+
+    y = check_y - 1
+    WEAK_BOUND_R = 0
+    AROUND_STONE = 1
+    while 1:
+        if y >= board_size or y < 0:
+            if not AROUND_STONE:
+                WEAK_BOUND_R = 1
+            else:
+                HARD_BOUND = 1
+            break
+        if board_array[check_x][y] == opponent_color:
+            if not AROUND_STONE:
+                WEAK_BOUND_R = 1
+            else:
+                HARD_BOUND = 1
+            break
+        if board_array[check_x][y] == turn:
+            find_stones += 1
+            AROUND_STONE = 1
+        elif board_array[check_x][y] == 0:
+            empty -= 1
+            AROUND_STONE = 0
+        if empty <= 0:
+            break
+        y -= 1
+
+    if find_stones == 3 and not HARD_BOUND:
+        if not (WEAK_BOUND_L and WEAK_BOUND_R):
+            count_3 += 1
+```
+
+## **최적화**
+python은 높은 가독성과 편의성으로 개발의 속도를 높인다는 뛰어난 장점이 있지만
+그러한 편의성을 위해서 속도와 메모리 측면에서는 상당한 비효율성을 떠앉게 되었습니다.
+<br />
+<br />
+python의 객체들은 개발자에게 친화적인 인터페이스를 제공하기 위해서 상당히 많은 부가적인
+ 기능들을 가지고 있고, 연산과정에서 대부분의 경우에는 불필요한 확인과정들을 거치게 됩니다.
+<br />
+<br />
+ 이러한 python의 단점은 **Cython**을 이용하면 손쉽게 해결할 수 있습니다. Cython은
+python의 코드를 c언어로 자동으로 변환하는 기능을 제공합니다. 파이썬 가상머신과의
+상호작용을 최소화하여 python의 개발 친화적이라는 장점을 그대로 유지하면서 코드 속 내재된
+ 비효율성을 손쉽게 해결 할 수 있습니다.
+<br />
+<br />
+![an image alt text]({{ site.baseurl }}/images/AIX_Project_Part01/optimization_01.PNG "Cython_html")
+<br />
+<br />
+노란색 라인이 진할 수록 파이썬 가상머신과의 상호작용을 많이 하는 것을 의미합니다. 코드의
+대부분에서 파이썬 가상머신과의 상호작용을 없앰으로써 비약적인 속도의 향상을 가져올 수
+있습니다.
+<br />
+<br />
+
+---
+***
+<br />
+<br />
+
+완성된 오목 게임 환경 파일은 [이곳](https://github.com/hissmell/Pytorch_Toy_Projects/blob/Omok/Omok/lib/envs.py)
+에서 확인 할 수 있습니다.
+
+또는 아래 링크를 통해 확인 할 수 있습니다.
+<br />
+<br />
+<https://github.com/hissmell/Pytorch_Toy_Projects/blob/Omok/Omok/lib/envs.py>
