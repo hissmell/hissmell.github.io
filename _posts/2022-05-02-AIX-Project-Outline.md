@@ -58,8 +58,8 @@ title : AIX - Project Outline
 <br />
 <br />
 
-4. **MCTS implementation - _Expansion_ and _Simulation_**
-   - _Expansion_ 단계와 _Simulation_단계를 함께 구현합니다.
+4. **MCTS implementation - _Expansion_ and *Simulation***
+   - _Expansion_ 단계와 *Simulation*단계를 함께 구현합니다.
 <br />
 <br />
 
