@@ -1,7 +1,7 @@
 ---
 layout : post
-title : 강화학습
----
+title : Part 4. 강화학습
+--------------------
 
 이 포스트에서는 MCTS와 자가게임이 강화학습에 적용되는 과정을 구현합니다.
 <br />
@@ -17,7 +17,7 @@ title : 강화학습
  정책입니다. 따라서 다음의 과정으로 학습을 진행하면 향상된 정책을 얻을 수 있습니다.
 <br />
 <br />
-![an image alt text]({{ site.baseurl }}/images/AIX_Project_Part04/mcts02.PNG)
+![an image alt text]({{ site.baseurl }}/images/AIX_Project_Part04/mcts02.png)
 <br />
 <br />
 
