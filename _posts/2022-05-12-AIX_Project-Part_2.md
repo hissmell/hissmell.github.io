@@ -103,7 +103,176 @@ title : Part 2. MCTS 구현
  효과로, 트리가 모든 상태를 균등하게 탐색하지 않고, 유력한 상태를 주로 탐색하면서 탐색의
  효율을 증가시켰습니다.
 
+<br />
+<br />
 
+---
 
+## **MCTS 구현 - *Selection***
 
+<br />
+<br />
+
+ 트리의 노드는 딕셔너리에 의해서 관리됩니다.
+
+```python
+def find_leaf(self, state_np, player):
+    '''
+    :param state_np:
+    :param player:
+    (1) value : None if leaf node, or else equals to the game outcome for the player at leaf node
+    (2) leaf_state_np : nd_array bytes of the leaf node
+    (3) player : player at the leaf node
+    (4) states_b : list of states (in bytes) traversed
+    (5) actions : list of actions (int 64) taken
+    :return:
+    '''
+    states_b = []
+    actions = []
+    cur_state_np = state_np
+    cur_player = player
+    value = None
+    env_copy = copy.deepcopy(self.env)
+
+    while not self.is_leaf(cur_state_np):
+        cur_state_b = cur_state_np.tobytes()
+        states_b.append(cur_state_b)
+        counts = self.visit_count[cur_state_b]
+        total_sqrt = math.sqrt(sum(counts))
+        probs = self.probs[cur_state_b]
+        values_avg = self.values_avg[cur_state_b]
+
+        # if cur_state_b == state_b:
+        #     noises = np.random.dirichlet([0.03] * self.action_size)
+        #     probs = [0.75 * prob + 0.25 * noise for prob,noise in zip(probs,noises)]
+
+        score = [q_value + self.c_punc * prob * total_sqrt / (1 + count)
+                 for q_value,prob,count in zip(values_avg,probs,counts)]
+
+        illegal_actions = set(self.all_action_list) - set(env_copy.legal_actions)
+        for illegal_action in illegal_actions:
+            score[illegal_action] = -np.inf
+
+        for waiting_action in self.waiting[cur_state_b]:
+            score[waiting_action] = -100
+
+        action = int(np.argmax(score))
+        actions.append(action)
+
+        cur_state_np, reward, done, info = env_copy.step(action)
+        cur_player = -cur_player
+        if done:
+            if cur_player == BLACK:
+                value = reward
+            else:
+                value = -reward
+
+    return value, cur_state_np, cur_player, states_b, actions
+```
+
+---
+
+## **MCTS 구현 - *Expansion* and *Simulation***
+
+<br />
+<br />
+
+ *Simulation*은 신경망이 가치를 추정하는 단계로 대체됩니다.
+
+```python
+backup_queue = []
+expand_states_np = []
+expand_players = []
+expand_queue = []
+
+for i in range(count):
+    value, leaf_state_np, leaf_player, states_b, actions = self.find_leaf(state_np,player)
+    leaf_state_b = leaf_state_np.tobytes()
+    if value is not None:
+        backup_queue.append((value,states_b,actions))
+    else:
+        self.waiting[states_b[-1]].append(actions[-1])
+        expand_states_np.append(leaf_state_np)
+        expand_players.append(leaf_player)
+        expand_queue.append((leaf_state_b,states_b,actions))
+
+if expand_queue:
+    if not net == None:
+        batch_var = torch.tensor(np.array(expand_states_np), dtype=torch.float32).to(device)
+        logits_var, values_var = net(batch_var)
+        probs_var = F.softmax(logits_var,dim=1)
+        values_np = values_var.data.to('cpu').numpy()[:,0] # 흑 플레이어 입장에서 value입니다.
+        probs_np = probs_var.data.to('cpu').numpy()
+    else:
+        N = np.array(expand_states_np).shape[0]
+        probs_np = np.ones([N,self.action_size],dtype=np.float32) / self.action_size
+        values_np = np.ones([N],dtype=np.float32) / self.action_size
+
+    # 흑 플레이어 입장에서 예측된 value를 해당 노드 플레이어 입장에서 value로 조정합니다.
+    for ii in range(len(expand_players)):
+        values_np[ii] = values_np[ii] if expand_players[ii] == BLACK else -values_np[ii]
+
+    for (leaf_state_b,states_b,actions),value,prob in zip(expand_queue,values_np,probs_np):
+        self.visit_count[leaf_state_b] = [0] * self.action_size
+        self.value[leaf_state_b] = [0.0] * self.action_size
+        self.values_avg[leaf_state_b] = np.random.uniform(low=-0.01,high=0.01,size=self.action_size)
+        self.probs[leaf_state_b] = prob
+        backup_queue.append((value,states_b,actions))
+self.waiting.clear()
+```
+
+---
+
+## **MCTS 구현 - *Backpropagation***
+
+<br />
+<br />
+
+한가지 주의해야 할 점은, 이 구현과정에서 게임의 최종상태, 즉 *5*가 완성되거나 완성되지
+못한 채로 돌로 보드가 가득차있는 상태는 노드에 포함되지 않습니다.  
+오목은 2명이 적대적으로 진행되는 게임이므로 어떤 상태의 가치가 1이라면 그 상태는 이전
+플레이어 입장에서는 가치가 -1것과 같이 간주됩니다.
+<br />
+<br />
+
+```python
+for value,states_b,actions in backup_queue:
+    '''
+    leaf state is not stored in states_b.
+    therefore value is supposed to opponent's value.
+    so we have to convert it to reverse!
+    '''
+    cur_value = -value
+    for state_b, action in zip(states_b[::-1],actions[::-1]):
+        self.visit_count[state_b][action] += 1
+        self.value[state_b][action] += cur_value
+        self.values_avg[state_b][action] = self.value[state_b][action] / self.visit_count[state_b][action]
+        cur_value = -cur_value
+```
+
+---
+
+## **최적화**
+
+위 4개의 단계 중에서 가장 시간이 가장 많이 소모되는 과정은 *Simulation* 단계입니다.
+**인공신경망을 호출하는 것은 상당히 비싼연산이기 때문에 매번 *Expansion*을 할 때마다
+인공신경망을 호출하는 것은 MCTS의 탐색속도를 극히 느리게 만드는 주요한 요인이 됩니다.**  
+이러한 문제를 해결하기 위해서 약간의 정확성을 희생하지만, 미니배치를 만들어 여러 노드를
+한번에 트리에 추가하는 것이 도움이 될 수 있습니다.  
+ 이 프로젝트에서는 미니배치를 만들어서 MCTS를 구현하였으며, 8개의 노드를 한번에 확장하는
+ 방식으로 진행하였습니다.
+ <br />
+ <br />
+
+ ---
+ ***
+
+ MCTS의 완성된 파일은 [이곳](https://github.com/hissmell/Pytorch_Toy_Projects/blob/Omok/Omok/lib/mcts.py)
+ 에서 확인 할 수 있습니다.
+
+<br />
+<br />
+
+---
+***
 
