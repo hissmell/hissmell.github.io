@@ -72,6 +72,8 @@ title : Part 1. 오목 게임 구현
 <br />
 <br />
 
+---
+
 ## **강화학습을 위한 State와 Action**
    강화학습을 효과적으로 진행하기 위해서, 학습에 적합한 State와 Action 표현을 설정하는
  것은 반드시 선행되어야 하는 과제입니다. State와 Action은 다음의 요소를 포함하는 것이
@@ -107,6 +109,8 @@ title : Part 1. 오목 게임 구현
     * Description : Action을 board_size로 나눈 몫을 돌을 두는 곳의 행, 나머지를
   열로 사용합니다.
 
+---
+
 ## 의사코드로 게임을 나타내기
  **게임의 진행과정을 의사코드로 나타내면 다음과 같습니다**
 1. 흑 또는 백이 action을 합니다.
@@ -135,6 +139,8 @@ title : Part 1. 오목 게임 구현
 
 9. 보드에 전부 돌이 놓여지거나 *5*가 완성되면 그에 해당하는 결과값을 반환하고 게임을 종료합니다.
 <br />
+
+---
 
 ## **승리를 판정하는 방법**
 
@@ -198,6 +204,8 @@ if max_streak < streak:
 if max_streak == 5:
     return 2 # 5가 완성되었음을 의미합니다.
 ```
+
+---
 
 ## **금지수를 판정하는 방법**
  * *장목*을 판단하는 방법
@@ -331,6 +339,8 @@ count_3 = 0
             count_3 += 1
 ```
 
+---
+
 ## **최적화**
 python은 높은 가독성과 편의성으로 개발의 속도를 높인다는 뛰어난 장점이 있지만
 그러한 편의성을 위해서 속도와 메모리 측면에서는 상당한 비효율성을 떠앉게 되었습니다.
@@ -363,7 +373,8 @@ python의 코드를 c언어로 자동으로 변환하는 기능을 제공합니�
 완성된 오목 게임 환경 파일은 [이곳](https://github.com/hissmell/Pytorch_Toy_Projects/blob/Omok/Omok/lib/envs.py)
 에서 확인 할 수 있습니다.
 
-또는 아래 링크를 통해 확인 할 수 있습니다.
 <br />
 <br />
-<https://github.com/hissmell/Pytorch_Toy_Projects/blob/Omok/Omok/lib/envs.py>
+
+---
+***
