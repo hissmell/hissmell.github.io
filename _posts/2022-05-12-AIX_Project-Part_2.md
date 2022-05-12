@@ -19,7 +19,7 @@ title : Part 2. MCTS 구현
  MCTS의 탐색과정은 다음의 4가지 단계로 이루어집니다.
 <br />
 <br />
-1. *Selection*
+1. ***Selection***
 <br />
 
  기존에 가지고 있는 탐색트리 내에서 트리 정책을 통해서 리프노드를 선택합니다.
@@ -27,14 +27,14 @@ title : Part 2. MCTS 구현
  플레이어가 자신의 이득을 최대로 할 수 있는 노드를 선택하는 것을 의미하도록 설정됩니다.
 
 
-2. *Expansion*
+2. ***Expansion***
 <br />
 
  *Selection* 단계에서 도달한 리프노드에서 자식노드를 추가합니다. 추가된 노드의 추정 가치나
  방문횟수같은 통계 값들은 모두 0으로 설정됩니다.
 
 
-3. *Simulation*
+3. ***Simulation***
 <br />
 
  *Expansion* 단계에서 추가된 자식노드의 추정 가치를 결정하는 단계입니다. 자식노드에서
@@ -45,7 +45,7 @@ title : Part 2. MCTS 구현
  우수한 성능을 가질 수록 그 노드의 가치 추정값이 정확해집니다.
 
 
-4. *Backpropagation*
+4. ***Backpropagation***
 <br />
 
  추가된 노드의 가치 추정값, 또는 방문횟수와 같은 모든 통계적 데이터들을 그 노드에 도달하기
@@ -79,7 +79,7 @@ title : Part 2. MCTS 구현
 <br />
 <br />
 
-* 탐색 Depth 개선
+* **탐색 Depth 개선**
 <br />
 
 기존의 MCTS는 새로 추가되는 노드의 가치를 추정하기 위해서 그 노드를 시작으로 *Simulation*
@@ -92,7 +92,7 @@ title : Part 2. MCTS 구현
  것으로 대체합니다. 이렇게 함으로써 탐색의 깊이를 게임의 끝까지 하지 않고 효율적으로
  줄일 수 있습니다.
 
- * 탐색 Width 개선
+ * **탐색 Width 개선**
 <br />
 
 한 상태에서 가능한 action의 가짓수(branch factor)가 크다는 것도 MCTS에서 문제가
