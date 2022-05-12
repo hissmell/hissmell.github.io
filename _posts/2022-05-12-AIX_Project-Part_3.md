@@ -22,7 +22,7 @@ title : Part 3. 신경망
   다르게 **"국소적"인 특징을 이해할 수 있다**는 특징을 가지고 있습니다.
 <br />
 <br />
- ![an image alt text]({{ site.baseurl }}/images/AIX_Project_Part03/CNN01.png "Example of Omok game")
+ ![an image alt text]({{ site.baseurl }}/images/AIX_Project_Part03/CNN01.png)
 <br />
 <br />
  따라서 Convolutional layer를 여러 층 쌓게 된다면 초기의 레이어들은 저수준의 국소적인
