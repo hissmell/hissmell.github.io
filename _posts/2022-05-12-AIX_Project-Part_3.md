@@ -64,7 +64,7 @@ title : Part 3. 신경망
 <br />
  신경망이 복잡한 상황에 대한 충분한 판단능력을 가지기 위해서는 신경망을 깊게 쌓는것이
  필요합니다. 하지만 신경망이 깊어지면 깊어질 수록, 역전파과정에서 전달되는 gradient가
- 소실되는 "**gradient vanishing**"문제가 필연적으로 발생합니다.*"gradient vanishing"**문제가 필연적으로 발생합니다.
+ 소실되는 "**gradient vanishing**"문제가 필연적으로 발생합니다.
 <br />
 <br />
  이러한 문제를 해결하기 위해서 residual network는 들어오는 인풋을 2개의 트랙으로 나누어
