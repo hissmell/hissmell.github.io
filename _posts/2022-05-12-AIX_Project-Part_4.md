@@ -240,6 +240,84 @@ def play_game(env,mcts_stores,replay_buffer,net1,net2
 
 ---
 
+## **최적화**
+<br />
+
+ 자가게임을 통해 데이터를 수집하는 과정은 학습과정에서 가장 많은 시간을 소비하게 되는
+ 과정입니다. 이 과정을 파이썬의 multiprocessing 라이브러리를 통해서 병렬화하면
+ 병렬화된 프로세스의 개수만큼 데이터를 더 빠르게 수집할 수 있습니다.
+ <br />
+ <br />
+
+ ```python
+import multiprocessing as mp
+
+ # 멀티프로세싱으로 데이터 수집 가속
+def mp_collect_experience(max_game_num,path_dict,env,local_net,name,gamma,device):
+    while True:
+        if len(os.listdir(path_dict['data_dir_path'])) >= max_game_num:
+            break
+        mcts_stores = mcts.MCTS(env)
+        t = time.time()
+
+        _, game_steps, game_history = common.play_game(env, mcts_stores, replay_buffer=None
+                                                  ,net1=local_net, net2=local_net
+                                                  ,steps_before_tau_0=STEPS_BEFORE_TAU_0
+                                                  ,mcts_searches=MCTS_SEARCHES
+                                                  ,mcts_batch_size=MCTS_BATCH_SIZE, device=device
+                                                  ,render=False,return_history=True,gamma=gamma)
+        dt = time.time() - t
+        step_speed = game_steps / dt
+        node_speed = len(mcts_stores) / dt
+        print(colored(f"------------------------------------------------------------\n"
+                      f"(Worker : {name})\n"
+                      f" Game steps : {len(os.listdir(path_dict['data_dir_path']))}"
+                      f" Game length : {game_steps}\n"
+                      f"------------------------------------------------------------", 'red'))
+        print(colored(f"  * Used nodes in one game : {len(mcts_stores) // PLAY_EPISODE:d} \n"
+                      f"  * Game speed : {step_speed:.2f} moves/sec ||"
+                      f"  Calculate speed : {node_speed:.2f} node expansions/sec \n"
+                      , 'cyan'))
+
+        game_path = os.path.join(path_dict['data_dir_path'], f"game_{len(os.listdir(path_dict['data_dir_path'])):d}")
+        state_list = []
+        probs_list = []
+        result_list = []
+        for state_arr,_,probs_arr,result in reversed(game_history):
+            state_list.append(state_arr)
+            probs_list.append(probs_arr)
+            result_list.append(result)
+        state_list = np.stack(state_list,axis=0).tolist()
+        probs_list = np.stack(probs_list,axis=0).tolist()
+        game_data = {'states':state_list,'probs':probs_list,'results':result_list}
+        with open(game_path+'.json','w') as f:
+            json.dump(game_data,f)
+        del mcts_stores
+
+while True:
+    for _ in range(PLAY_EPISODE):
+        # 멀티 프로세스들마다 게임 데이터 수집
+        workers = [mp.Process(target=mp_collect_experience,
+                              args=(MAX_GAME_NUM,path_dict,env,net,f"Worker{i:02d}",
+                                    GAMMA,
+                                    device)) for i in range(NUM_WORKERS)]
+
+        for i in range(NUM_WORKERS):
+            workers[i].start()
+            time.sleep(100)
+        [worker.join() for worker in workers]
+        [worker.close() for worker in workers]
+ ```
+ <br />
+ <br />
+
+ 제 노트북에서는 램 용량이 부족해서 병렬화된 프로세스를 3개로 설정하였지만 램과 그래픽카드의
+ 메모리가 충분하다면 개인 cpu의 코어수만큼 NUM_WORKERS를 설정하면 최대의 데이터 수집속도를
+ 경험할 수 있습니다.
+
+
+---
+
 ## 평가
 <br />
 
@@ -250,30 +328,80 @@ def play_game(env,mcts_stores,replay_buffer,net1,net2
 
  * iteration_0의 평가
      - **vs Mint model** -> Win : 21.00  Draw : 0.00  Lose : 0.00 (over 21 games)
-<br />
+     <br />
 
  * iteration_1의 평가
      - **vs Mint model** -> Win : 21.00  Draw : 0.00  Lose : 0.00 (over 21 games)
      <br />
 
-     - **vs iter_00 model**  ->Win : 16.00  Draw : 0.00  Lose : 5.00 (over 21 games)
+     - **vs iter_00 model**  -> Win : 16.00  Draw : 0.00  Lose : 5.00 (over 21 games)
      <br />
 
-학습 그래프는 아래와 같습니다
+ * iteration_2의 평가
+     - **vs Mint model** -> Win : 21.00  Draw : 0.00  Lose : 0.00 (over 21 games)
+     <br />
+
+     - **vs iter_00 model**  -> Win : 21.00  Draw : 0.00  Lose : 0.00 (over 21 games)
+     <br />
+
+     - **vs iter_01 model**  -> Win : 14.00  Draw : 1.00  Lose : 15.00 (over 30 games)
+     <br />
+
+ iter_2 모델이 iter_1 모델과의 게임에서 특별히 강한 모습을 보여주지 않아서 조기에 학습을
+ 종료하였습니다. 하지만 iter_0과 게임하는 것에 대해서는 iter_2가 iter_1보다 확실히 더
+ 강한 모습을 보이는 것을 보면 iter_2 모델에서 더 강화학습을 진행하면 더 강한 모델을 얻을
+ 수 있을 수 있을 것이라고 생각합니다.
 <br />
 <br />
-![an image alt text]({{ site.baseurl }}/images/AIX_Project_Part04/iter_01_train_policy_loss.PNG)
-<br />
-<br />
-![an image alt text]({{ site.baseurl }}/images/AIX_Project_Part04/iter_01_train_value_loss.PNG)
-<br />
-<br />
-![an image alt text]({{ site.baseurl }}/images/AIX_Project_Part04/iter_01_train_total_loss.PNG)
-<br />
-<br />
-![an image alt text]({{ site.baseurl }}/images/AIX_Project_Part04/iter_01_valid_total_loss.PNG)
-<br />
-<br />
+
+ * **테스트 경기**
+  iter_02 모델과 iter_00 모델의 테스트 경기 중 하나의 기보입니다. X(백)에 해당하는
+ Net 1이 iter_02 모델, O(흑)에 해당하는 Net 2가 iter_00의 모델입니다.
+ <br />
+ <br />
+
+  - **Visit** : 해당 액션에 해당하는 노드를 방문한 횟수입니다. 이 횟수가 높을 수록
+       이 행동을 택할 확률이 높습니다.
+       <br />
+
+     - **Q_Value** : 해당 액션의 가치를 추정한 값입니다. 1에 가까우면 자신에게 유리, -1에
+       가까우면 자신에게 불리하다고 판단합니다.
+       <br />
+
+     - **Prob** : 해당 액션을 택할 확률을 나타냅니다.
+       <br />
+
+
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game01.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game02.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game03.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game04.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game05.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game06.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game07.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game08.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game09.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game10.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game11.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game12.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game13.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game14.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game15.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game16.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game17.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game18.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game19.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game20.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game21.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game22.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game23.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game24.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game25.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game26.jpg)
+![game record]({{ site.baseurl }}/images/AIX_Project_Part04/game27.jpg)
+
+
+
 
 ---
 ***
